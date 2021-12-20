@@ -3,3 +3,4 @@ dist/
 __pycache__/
 config.yaml
 urls.txt
+log4j-scan.py
