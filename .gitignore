@@ -1,1 +1,5 @@
 tests/
+dist/
+__pycache__/
+config.yaml
+urls.txt

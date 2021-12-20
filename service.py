@@ -1,13 +1,4 @@
-#!/usr/bin/env python3
-# coding=utf-8
-# ******************************************************************
-# log4j-scan: A generic scanner for Apache log4j RCE CVE-2021-44228
-# Author:
-# Mazin Ahmed <Mazin at FullHunt.io>
-# Scanner provided by FullHunt.io - The Next-Gen Attack Surface Management Platform.
-# Secure your Attack Surface with FullHunt.io.
-# ******************************************************************
-
+# -*- coding: utf-8 -*-
 
 import requests
 import time
@@ -21,24 +12,16 @@ from Crypto.Cipher import AES, PKCS1_OAEP
 from Crypto.PublicKey import RSA
 from Crypto.Hash import SHA256
 
-
-# Disable SSL warnings
 try:
     import requests.packages.urllib3
+
     requests.packages.urllib3.disable_warnings()
 except Exception:
     pass
 
-
-# cprint('[•] CVE-2021-44228 - Apache Log4j RCE Scanner', "green")
-# cprint('[•] Scanner provided by FullHunt.io - The Next-Gen Attack Surface Management Platform.', "yellow")
-# cprint('[•] Secure your External Attack Surface with FullHunt.io.', "yellow")
-
-
 default_headers = {
-    'User-Agent': 'log4j-scan (https://github.com/mazen160/log4j-scan)',
-    # 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/96.0.4664.93 Safari/537.36',
-    'Accept': '*/*'  # not being tested to allow passing through checks on Accept header in older web-servers
+    'User-Agent': 'log4j-scan',
+    'Accept': '*/*'
 }
 post_data_parameters = ["username", "user", "email", "email_address", "password"]
 timeout = 4
@@ -189,10 +172,6 @@ def scan_url(url, callback_host):
     payloads = [payload]
 
     for payload in payloads:
-        print(f"[•] URL: {url} | PAYLOAD: {payload}", "cyan")
-
-        # try GET request
-        # if args.request_type.upper() == "GET":
         try:
             requests.request(url=url,
                              method="GET",
@@ -203,8 +182,8 @@ def scan_url(url, callback_host):
         except Exception as e:
             print(f"EXCEPTION: {e}")
 
-def main():
-    url = 'https://example.com'
+
+def main(url):
     urls = []
     urls.append(url)
 
@@ -212,28 +191,35 @@ def main():
     # dns_callback = Dnslog()
     dns_callback_host = dns_callback.domain
 
-
-    print("[%] Checking for Log4j RCE CVE-2021-44228.", "magenta")
     for url in urls:
         print(f"[•] URL: {url}", "magenta")
         scan_url(url, dns_callback_host)
 
-    print("[•] Payloads sent to all URLs. Waiting for DNS OOB callbacks.", "cyan")
-    print("[•] Waiting...", "cyan")
     wait_time = 5
     time.sleep(wait_time)
     records = dns_callback.pull_logs()
+
     if len(records) == 0:
         result = "Target may not be vulnerable"
-        print("[•] Targets does not seem to be vulnerable.")
     else:
-        result = "Target may not be vulnerable"
-        print("Target is vulnerable")
-        for i in records:
-            print(i, "yellow")
+        result = "Target is vulnerable"
     return result
 
 
-if __name__ == "__main__":
-    main()
+def handler(event, context):
+    url = event['queryStringParameters']['url']
 
+    result = main(url)
+    response_body = {
+        "url": url,
+        "result": result
+    }
+    return {
+        "statusCode": 200,
+        "headers": {
+            "Content-Type": "application/json",
+            "Access-Control-Allow-Origin": "*",
+
+        },
+        "body": json.dumps(response_body)
+    }
